@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+To change this license header, choose License Headers in Project Properties.
+To change this template file, choose Tools | Templates
+and open the template in the editor.
+-->
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:h="http://xmlns.jcp.org/jsf/html"
+      xmlns:p="http://primefaces.org/ui"
+      xmlns:f="http://xmlns.jcp.org/jsf/core">
+    <h:head>
+        <script type="text/javascript">
+                var ws;
+                function chatRelay()
+                {
+                    var username = document.getElementById("chatForm:username").valueOf();
+
+                    if ("WebSocket" in window)
+                    {
+                        var json = {
+                            'username': username,
+                            'message': ""
+                        };
+
+                        // Open Web Socket
+                        ws = new WebSocket("ws://localhost:8080/AcmeChat/chatEndpoint/" + username.value);
+                        ws.onopen = function ()
+                        {
+                            // Perform handing when connection is opened
+                        };
+                        ws.onmessage = function (evt)
+                        {
+                            var json = JSON.parse(evt.data);
+                            var currentValue = document.getElementById('output').innerHTML;
+                            document.getElementById('output').innerHTML =
+                                    currentValue +
+                                    '<br />' +
+                                    json.username + ": " + json.message;
+
+                        };
+
+                        ws.onclose = function ()
+                        {
+                            // websocket is closed.
+                            alert("Connection is closed...");
+                        };
+
+                    } else
+                    {
+                        // The browser doesn't support WebSocket
+                        alert("WebSocket NOT supported by your Browser!");
+                    }
+                }
+
+            function send() {
+                var username = document.getElementById('chatForm:username').valueOf();
+                var message = document.getElementById('chatForm:chatText').valueOf();
+                var json = {
+                    'username': username.value,
+                    'message': message.value
+                };
+                ws.send(JSON.stringify(json));
+                return false;
+            }
+        </script>
+    </h:head>
+    <h:body>
+        <h:form id="chatForm">
+            <h:outputLabel for="username" value="Username: "/>
+            <p:inputText id="username" />
+            <br/>
+            <p:commandButton id="wsRelay" type="button" value="Connect"
+                             onclick="chatRelay();" update="chatText,sendMessage"/>
+            <br/><br/>
+
+            <p:inputTextarea id="chatText" cols="30" rows="10" style="visibility: #{chatSessionController.users ne null? 'visible':'hidden'}"></p:inputTextarea>
+            <br/><br/>
+
+            <p:commandButton id="sendMessage" type="button" value="Send"
+                             style="visibility: #{chatSessionController.users ne null? 'visible':'hidden'}"
+                             onclick="send();"/>
+        </h:form>
+        <br/><br/>
+        <div id="output"></div>
+    </h:body>
+
+</html>
